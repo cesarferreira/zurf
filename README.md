@@ -69,6 +69,36 @@ Search directory names and Git branches, or include `/` to search paths. Each re
 
 To change the command, shortcut, or default result limit, adjust the `zurf init` line above. Shell integration currently supports **zsh**.
 
+## Shortcuts
+
+| Key | Action |
+| --- | --- |
+| **Alt+1–9** | Jump directly to a numbered result; **1** is the best match at the bottom |
+| **Ctrl+S** | Toggle Frequent / Recent ordering |
+| **Ctrl+B** | Pin or unpin the selected directory (`★`) |
+| **Ctrl+X** | Hide the selected directory |
+| **Ctrl+Z** | Undo the last hide, restoring its pin if it had one |
+
+Search matches are highlighted. Long paths shorten from the left so the destination stays visible. Pins stay available even after a directory drops out of zoxide's history. Hidden entries can be restored; they remain in zoxide.
+
+```sh
+zs -                   # Return to the previous directory; repeat to switch back
+zurf pin /path/to/app   # Pin a directory (omit the path for the current one)
+zurf unpin /path/to/app
+zurf hidden            # List hidden directories
+zurf unhide /path/to/app
+```
+
+For a persistent Recent sort, add `--sort recent` to the setup line. Frequent is the default, and pins come first in either mode. Pins and hidden entries are saved locally in zurf's configuration directory.
+
+Git status is optional and loaded in the background for the selected repository:
+
+```sh
+eval "$(zurf init zsh --cmd zs --bind ctrl-g --limit 10 --git-status)"
+```
+
+`●` means uncommitted changes (including untracked files); `↑2` / `↓1` mean commits ahead / behind the upstream branch. Git checks time out after two seconds and are cancelled when the picker closes.
+
 ## License
 
 MIT

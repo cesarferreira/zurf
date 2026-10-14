@@ -9,6 +9,7 @@ use tempfile::TempDir;
 fn run(data: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_zurf"))
         .env("_ZO_DATA_DIR", data)
+        .env("ZURF_CONFIG_DIR", data.join("preferences"))
         .args(args)
         .output()
         .unwrap()
@@ -237,4 +238,87 @@ fn reads_text_database_access_times() {
     .unwrap();
     let rows = list(&data, &["list", "--json"]);
     assert_eq!(rows[0]["last_accessed"], 1700000600_u64);
+}
+
+#[test]
+fn pin_hide_restore_and_recent_sort_keep_full_directory_paths() {
+    let (_t, data, repo) = fixture();
+    let sub = repo.join("src");
+    database(
+        &data,
+        format!(
+            "1700000100\t2\t{}\n1700000000\t20\t{}\n",
+            sub.display(),
+            repo.display()
+        ),
+    );
+    let recent = list(&data, &["list", "--json", "--sort", "recent"]);
+    assert_eq!(recent[0]["path"], sub.to_str().unwrap());
+    assert!(run(&data, &["pin", sub.to_str().unwrap()]).status.success());
+    assert_eq!(
+        list(&data, &["list", "--json"])[0]["path"],
+        sub.to_str().unwrap()
+    );
+    assert!(
+        run(&data, &["hide", sub.to_str().unwrap()])
+            .status
+            .success()
+    );
+    assert_eq!(
+        list(&data, &["list", "--json"]).as_array().unwrap().len(),
+        1
+    );
+    assert!(
+        run(&data, &["unhide", sub.to_str().unwrap()])
+            .status
+            .success()
+    );
+    assert_eq!(
+        list(&data, &["list", "--json"]).as_array().unwrap().len(),
+        2
+    );
+    assert_eq!(
+        list(&data, &["list", "--json"])[0]["path"],
+        repo.to_str().unwrap()
+    );
+}
+
+#[test]
+fn pinned_directory_survives_absence_from_zoxide_history() {
+    let (_t, data, repo) = fixture();
+    assert!(
+        run(&data, &["pin", repo.to_str().unwrap()])
+            .status
+            .success()
+    );
+    let rows = list(&data, &["list", "--json"]);
+    assert_eq!(rows[0]["path"], repo.to_str().unwrap());
+    assert_eq!(rows[0]["last_accessed"], Value::Null);
+}
+
+#[cfg(unix)]
+#[test]
+fn hiding_alias_hides_same_directory_without_changing_jump_path() {
+    let (t, data, repo) = fixture();
+    let alias = t.path().join("linked-project");
+    std::os::unix::fs::symlink(&repo, &alias).unwrap();
+    database(&data, format!("1700000000\t2\t{}\n", alias.display()));
+    assert!(
+        run(&data, &["hide", alias.to_str().unwrap()])
+            .status
+            .success()
+    );
+    assert_eq!(
+        list(&data, &["list", "--json"]).as_array().unwrap().len(),
+        0
+    );
+    assert!(
+        run(&data, &["unhide", alias.to_str().unwrap()])
+            .status
+            .success()
+    );
+    assert_eq!(
+        list(&data, &["list", "--json"])[0]["path"],
+        alias.to_str().unwrap()
+    );
 }

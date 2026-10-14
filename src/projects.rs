@@ -14,6 +14,10 @@ use std::{
 pub struct Project {
     pub name: String,
     pub path: PathBuf,
+    #[serde(skip)]
+    pub identity: PathBuf,
+    #[serde(skip)]
+    pub git_root: Option<PathBuf>,
     pub branch: Option<String>,
     pub score: f64,
     pub last_accessed: Option<u64>,
@@ -59,7 +63,7 @@ fn timestamps(data: &Path) -> Result<HashMap<String, u64>> {
     }
 }
 
-fn repository(path: &Path) -> Option<(PathBuf, PathBuf)> {
+pub(crate) fn repository(path: &Path) -> Option<(PathBuf, PathBuf)> {
     let path = fs::canonicalize(path).ok()?;
     for root in path.ancestors() {
         let marker = root.join(".git");
@@ -143,10 +147,33 @@ pub fn load() -> Result<Vec<Project>> {
             .into_owned();
         projects.push(Project {
             name,
+            identity: fs::canonicalize(&original).unwrap_or_else(|_| original.clone()),
+            git_root: repo.as_ref().map(|(root, _)| root.clone()),
             path: original,
             branch,
             score,
             last_accessed: visited,
+        });
+    }
+    for path in crate::preferences::Preferences::load()?.pins {
+        if !path.is_dir() || projects.iter().any(|p| p.identity == path) {
+            continue;
+        }
+        let repo = repository(&path);
+        let name = path
+            .file_name()
+            .unwrap_or(path.as_os_str())
+            .to_string_lossy()
+            .into_owned();
+        let branch = repo.as_ref().and_then(|(_, git_dir)| branch(git_dir));
+        projects.push(Project {
+            name,
+            identity: fs::canonicalize(&path).unwrap_or_else(|_| path.clone()),
+            git_root: repo.as_ref().map(|(root, _)| root.clone()),
+            path,
+            branch,
+            score: 0.0,
+            last_accessed: None,
         });
     }
     Ok(projects)

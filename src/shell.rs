@@ -1,6 +1,6 @@
 use anyhow::{Result, ensure};
 
-pub fn init(cmd: &str, bind: &str, limit: u16) -> Result<String> {
+pub fn init(cmd: &str, bind: &str, limit: u16, sort: &str, git_status: bool) -> Result<String> {
     ensure!(
         !cmd.is_empty()
             && cmd.as_bytes()[0].is_ascii_alphabetic()
@@ -56,8 +56,15 @@ pub fn init(cmd: &str, bind: &str, limit: u16) -> Result<String> {
     };
     let mut script = format!(
         r#"export ZURF_LIMIT={limit}
+export ZURF_SORT={sort}
+export ZURF_GIT_STATUS={git_status}
 
 function {cmd}() {{
+    if [[ "$#" -eq 1 && "$1" == "-" ]]; then
+        [[ -n "$OLDPWD" && -d "$OLDPWD" ]] || return 1
+        builtin cd -- "$OLDPWD"
+        return $?
+    fi
     local destination
     destination="$(command zurf pick "$@")" || return $?
     [[ -n "$destination" ]] || return 1

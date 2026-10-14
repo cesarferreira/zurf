@@ -46,6 +46,19 @@ def read_until(master, needle, timeout=10, cursor_row=1):
     raise AssertionError(f'Terminal did not show {needle!r}: {transcript[-1500:]!r}')
 
 
+def finish(proc, master):
+    deadline = time.monotonic() + 10
+    while proc.poll() is None and time.monotonic() < deadline:
+        if select.select([master], [], [], .1)[0]:
+            try:
+                chunk = os.read(master, 65536)
+            except OSError:
+                break
+            if not chunk:
+                break
+    return proc.communicate(timeout=2)
+
+
 with tempfile.TemporaryDirectory() as temp:
     root = Path(temp).resolve()
     data = root / 'data'
@@ -59,14 +72,18 @@ with tempfile.TemporaryDirectory() as temp:
     contents = struct.pack('<IQ', 3, len(entries))
     for path, score in entries:
         encoded = path.encode()
-        contents += struct.pack('<Q', len(encoded)) + encoded + struct.pack('<dQ', score, int(time.time()) - 720)
+        contents += struct.pack('<Q', len(encoded)) + encoded + struct.pack('<dQ', score, int(time.time()) - (60 if path == str(beta) else 720))
     (data / 'db.zo').write_bytes(contents)
     env = dict(os.environ, _ZO_DATA_DIR=str(data), TERM='xterm-256color', COLUMNS='120', LINES='24', PATH=f'{binary.parent}:{os.environ["PATH"]}')
 
     env.pop('NO_COLOR', None)
     env.pop('ZURF_LIMIT', None)
+    env.pop('ZURF_SORT', None)
+    env.pop('ZURF_GIT_STATUS', None)
+    env['ZURF_CONFIG_DIR'] = str(root / 'preferences')
 
-    for keys, expected in [(b'\r', alpha), (b'\x7f\r', alpha), (b'\x15\r', alpha), (b'\x10\r', beta), (b'beta\r', beta), (b'\x1b', None)]:
+    for keys, expected in [(b'\r', alpha), (b'\x7f\r', alpha), (b'\x15\r', alpha), (b'\x10\r', beta), (b'\x1b1', alpha), (b'\x1b2', beta), (b'\x02\r', alpha), (b'\x18\x1a\r', alpha), (b'\x13\r', beta), (b'beta\r', beta), (b'\x1b', None)]:
+        subprocess.run([str(binary), 'pin' if keys == b'\x18\x1a\r' else 'unpin', str(alpha)], env=env, check=True)
         master, slave = terminal()
         proc = subprocess.Popen([str(binary), 'pick'], stdin=slave, stderr=slave, stdout=subprocess.PIPE, env=env)
         os.close(slave)
@@ -82,9 +99,12 @@ with tempfile.TemporaryDirectory() as temp:
                 pattern = rb'\x1b\[(?:' + ansi + rb'|38;5;' + indexed + rb')(?:;[0-9]+)*m'
                 assert re.search(pattern, screen), f'Missing foreground color {ansi!r}'
             os.write(master, keys)
-            output, _ = proc.communicate(timeout=10)
+            output, _ = finish(proc, master)
             assert proc.returncode == (0 if expected else 1), proc.returncode
-            assert output.decode().rstrip('\n') == (str(expected) if expected else ''), output
+            assert output.decode().rstrip('\n') == (str(expected) if expected else ''), (keys, expected, output)
+            if keys == b'\x18\x1a\r':
+                saved = json.loads((root / 'preferences' / 'preferences.json').read_text())
+                assert str(alpha) in saved['pins'], 'Undo lost the pin'
             if expected is None:
                 tail = b''
                 while select.select([master], [], [], .1)[0]:
@@ -100,7 +120,23 @@ with tempfile.TemporaryDirectory() as temp:
             if proc.poll() is None:
                 proc.kill()
             os.close(master)
+    subprocess.run([str(binary), 'unpin', str(alpha)], env=env, check=True)
     print('Picker: rendering, timestamps, navigation, search, selection, cancellation passed')
+
+    (alpha / 'untracked').write_text('fixture')
+    master, slave = terminal()
+    proc = subprocess.Popen([str(binary), 'pick', '--git-status'], stdin=slave, stderr=slave, stdout=subprocess.PIPE, env=env)
+    os.close(slave)
+    try:
+        read_until(master, b'Search')
+        read_until(master, '●'.encode())
+        os.write(master, b'\r')
+        output, _ = finish(proc, master)
+        assert proc.returncode == 0 and output.decode().rstrip('\n') == str(alpha)
+    finally:
+        if proc.poll() is None: proc.kill()
+        os.close(master)
+    print('Picker: lazy Git dirty status passed')
 
     # More entries than the default cap: hidden entries must remain searchable.
     for i in range(12):
@@ -154,6 +190,8 @@ with tempfile.TemporaryDirectory() as temp:
         script.write_bytes(init)
         os.write(master, f"source '{script}'; print READY\n".encode())
         read_until(master, b'\x1b[?2004h')
+        os.write(master, f"builtin cd '{alpha}'; builtin cd '{beta}'; zs -; print PREVIOUS_OK:$PWD\n".encode())
+        read_until(master, f'PREVIOUS_OK:{alpha}\r\n'.encode())
         os.write(master, b'print -r -- "BUFFER_OK:$PWD"')
         os.write(master, b'\x07')
         screen = read_until(master, b'Search')
