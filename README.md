@@ -1,0 +1,132 @@
+<div align="center">
+  <h1>zort</h1>
+
+  <p><strong>Switch projects with ranked search and Git context</strong></p>
+
+  <p>
+    <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
+    <img alt="Rust" src="https://img.shields.io/badge/rust-1.85%2B-orange">
+    <img alt="Edition" src="https://img.shields.io/badge/edition-2024-blue">
+    <a href="https://crates.io/crates/zort"><img alt="crates.io" src="https://img.shields.io/crates/v/zort.svg"></a>
+  </p>
+
+  <p>
+    <a href="#install">Install</a>
+    &nbsp;·&nbsp;
+    <a href="#quickstart">Quickstart</a>
+    &nbsp;·&nbsp;
+    <a href="#development">Development</a>
+  </p>
+</div>
+
+---
+
+## Install
+
+Requires [Rust](https://rustup.rs) **1.85+** and `~/.cargo/bin` on your `PATH`.
+
+```bash
+cargo install --path . --locked
+```
+
+Verify:
+
+```bash
+zort --help
+```
+
+<details>
+<summary><strong>Build from source</strong> — for development or unreleased changes</summary>
+
+```bash
+git clone https://github.com/cesarferreira/zort.git
+cd zort
+cargo install --path . --locked
+# or
+make install-release
+```
+
+Debug install (faster compile, larger binary):
+
+```bash
+make install
+```
+
+Run without installing:
+
+```bash
+make build-release
+./target/release/zort
+```
+
+</details>
+
+<a id="quickstart"></a>
+## Quickstart
+
+Requires [zoxide](https://github.com/ajeetdsouza/zoxide). Keep its shell hook enabled so every directory visit is recorded. Add these lines to your `~/.zshrc`, in this order:
+
+```sh
+eval "$(zoxide init zsh)"
+eval "$(zort init zsh --cmd j --bind ctrl-g)"
+```
+
+Press **Ctrl+G** or run `j` to open the picker. Type to fuzzy-search, navigate with arrows or Ctrl+N/P, and press Enter to change directory. Escape cancels. The shortcut preserves any command already typed at the prompt.
+
+```sh
+j website                         # Start with a search
+j --limit 5                     # Show at most five results
+j --query website                 # Jump to the best match directly
+zort                            # Open picker; prints the chosen path
+zort list                       # Inspect projects without opening the picker
+zort list --json                 # Include numeric scores and Unix timestamps
+zort init zsh --cmd p --bind ctrl-o
+zort init zsh --cmd j --bind none # Define the command without a shortcut
+```
+
+The picker uses a compact inline panel with up to **10 results** by default. The highest-ranked match is selected at the bottom of the list, nearest the search field. Press Up or Ctrl+P to reach the next-best match. Empty search shows your highest-ranked directories, and typing searches your entire history before applying the limit. Set a persistent limit with `eval "$(zort init zsh --cmd j --bind ctrl-g --limit 5)"`, or `export ZORT_LIMIT=5`. `zort list` always includes the full history. Search matches project names and Git branches; include `/` or start with `~` to search paths. Each visited directory keeps its exact path, zoxide score, and access time. Git metadata is detected from its containing repository without changing the jump destination. Git worktrees stay separate. Detached HEAD shows a short commit identifier; non-Git directories have no branch.
+
+Last access means the latest visit recorded by zoxide, for that exact directory. Both the released binary database and upstream text database are supported. Unknown metadata formats show `unknown` with a diagnostic; ranking still comes from `zoxide query`. `_ZO_DATA_DIR` and zoxide's configured exclusions are respected.
+
+Shell integration currently supports **zsh**. `zort init` prints shell code; it does not edit your shell configuration. The picker draws on stderr, leaving stdout available for the selected path. Cancellation returns status 1 and never changes directory.
+
+Terminal integration checks (macOS/Linux, Python 3, zsh and zoxide):
+
+```sh
+cargo build
+python3 tests/terminal_smoke.py --bin /path/to/built/zort
+```
+
+<a id="development"></a>
+## Development
+
+Common tasks via the `Makefile`:
+
+```bash
+make              # check + build + test
+make build        # debug build
+make build-release
+make install      # install debug binary
+make install-release
+make run ARGS="list"
+make check        # cargo check + clippy
+make fmt          # format
+make lint         # fmt check + clippy
+make test
+make clean
+make demo         # install + show --help
+```
+
+Releasing (requires [cargo-release](https://github.com/crate-ci/cargo-release) and [git-cliff](https://github.com/orhun/git-cliff)):
+
+```bash
+make release                  # default minor bump
+make release LEVEL=patch      # patch bump
+make release LEVEL=major      # major bump
+```
+
+The pre-release hook regenerates `CHANGELOG.md` with `git-cliff` from your conventional-commit history (grouped into Features, Bug Fixes, etc. per `cliff.toml`) and commits it alongside the version bump. Pushing the resulting `v*` tag triggers the release workflow, which builds the multi-platform binaries and publishes a GitHub Release whose notes are generated by `git-cliff` from the same config.
+
+## License
+
+MIT
