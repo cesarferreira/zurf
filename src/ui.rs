@@ -50,7 +50,7 @@ impl Drop for Restore {
 pub fn pick(projects: &[Project], mut query: String, limit: usize) -> Result<Option<PathBuf>> {
     ensure!(
         io::stdin().is_terminal() && io::stderr().is_terminal(),
-        "the picker needs a terminal; use zort list or zort pick --query instead"
+        "the picker needs a terminal; use zurf list or zurf pick --query instead"
     );
     ensure!(
         !projects.is_empty(),
@@ -99,7 +99,7 @@ pub fn pick(projects: &[Project], mut query: String, limit: usize) -> Result<Opt
             let cyan = Style::default().fg(Color::Cyan);
             let heading = Line::from(vec![
                 Span::styled(
-                    format!(" zort v{}", env!("CARGO_PKG_VERSION")),
+                    format!(" zurf v{}", env!("CARGO_PKG_VERSION")),
                     cyan.add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(

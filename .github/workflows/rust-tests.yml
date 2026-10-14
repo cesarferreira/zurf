@@ -39,4 +39,4 @@ jobs:
       - name: Terminal integration
         run: |
           cargo build --locked
-          python3 tests/terminal_smoke.py --bin target/debug/zort
+          python3 tests/terminal_smoke.py --bin target/debug/zurf

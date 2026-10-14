@@ -49,8 +49,8 @@ run:
 
 # Quick demo
 demo: install
-	@echo "=== zort demo ==="
-	zort --help
+	@echo "=== zurf demo ==="
+	zurf --help
 
 # Bump version, regenerate CHANGELOG.md, tag, publish, and push (requires cargo-release + git-cliff)
 release:

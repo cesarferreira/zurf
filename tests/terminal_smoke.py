@@ -64,7 +64,7 @@ with tempfile.TemporaryDirectory() as temp:
     env = dict(os.environ, _ZO_DATA_DIR=str(data), TERM='xterm-256color', COLUMNS='120', LINES='24', PATH=f'{binary.parent}:{os.environ["PATH"]}')
 
     env.pop('NO_COLOR', None)
-    env.pop('ZORT_LIMIT', None)
+    env.pop('ZURF_LIMIT', None)
 
     for keys, expected in [(b'\r', alpha), (b'\x7f\r', alpha), (b'\x15\r', alpha), (b'\x10\r', beta), (b'beta\r', beta), (b'\x1b', None)]:
         master, slave = terminal()
@@ -147,7 +147,7 @@ with tempfile.TemporaryDirectory() as temp:
     os.close(slave)
     try:
         read_until(master, b'\x1b[?2004h')
-        os.write(master, b"PS1='ZORT> '; unset RPS1\n")
+        os.write(master, b"PS1='ZURF> '; unset RPS1\n")
         read_until(master, b'\x1b[?2004h')
         init = subprocess.check_output([str(binary), 'init', 'zsh'], env=env)
         script = root / 'init.zsh'
@@ -158,7 +158,7 @@ with tempfile.TemporaryDirectory() as temp:
         os.write(master, b'\x07')
         screen = read_until(master, b'Search')
         os.write(master, b'\x10\r')
-        returned = read_until(master, b'ZORT> ')
+        returned = read_until(master, b'ZURF> ')
         if b'Error:' in returned:
             raise AssertionError(returned)
         os.write(master, b'\r')

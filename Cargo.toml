@@ -1,15 +1,15 @@
 [package]
-name = "zort"
+name = "zsurf-cli"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Switch projects with ranked search and Git context"
 license = "MIT"
 authors = ["Cesar Ferreira"]
-repository = "https://github.com/cesarferreira/zort"
+repository = "https://github.com/cesarferreira/zurf"
 
 [[bin]]
-name = "zort"
+name = "zurf"
 path = "src/main.rs"
 
 [dependencies]

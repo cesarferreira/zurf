@@ -51,20 +51,20 @@ jobs:
         if: matrix.target != 'x86_64-pc-windows-msvc'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../zort-${{ matrix.target }}.tar.gz zort
+          tar czf ../../../zurf-${{ matrix.target }}.tar.gz zurf
           cd ../../..
 
       - name: Package (Windows)
         if: matrix.target == 'x86_64-pc-windows-msvc'
         shell: pwsh
         run: |
-          Compress-Archive -Path "target/${{ matrix.target }}/release/zort.exe" -DestinationPath "zort-${{ matrix.target }}.zip"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/zurf.exe" -DestinationPath "zurf-${{ matrix.target }}.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: zort-${{ matrix.target }}
-          path: zort-${{ matrix.target }}.*
+          name: zurf-${{ matrix.target }}
+          path: zurf-${{ matrix.target }}.*
 
   release:
     name: Release

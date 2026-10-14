@@ -7,7 +7,7 @@ use std::{
 use tempfile::TempDir;
 
 fn run(data: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_zort"))
+    Command::new(env!("CARGO_BIN_EXE_zurf"))
         .env("_ZO_DATA_DIR", data)
         .args(args)
         .output()
@@ -174,7 +174,7 @@ fn zsh_integration_changes_directory_and_binds_shortcut() {
             "PATH",
             format!(
                 "{}:{}",
-                Path::new(env!("CARGO_BIN_EXE_zort"))
+                Path::new(env!("CARGO_BIN_EXE_zurf"))
                     .parent()
                     .unwrap()
                     .display(),
@@ -189,7 +189,7 @@ fn zsh_integration_changes_directory_and_binds_shortcut() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(String::from_utf8_lossy(&output.stdout).contains(repo.to_str().unwrap()));
-    assert!(String::from_utf8_lossy(&output.stdout).contains("_zort_widget"));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("_zurf_widget"));
 }
 #[test]
 fn rejects_shell_injection_in_configurable_names() {
@@ -197,7 +197,7 @@ fn rejects_shell_injection_in_configurable_names() {
     assert!(
         !run(
             t.path(),
-            &["init", "zsh", "--cmd", "j;touch /tmp/zort-test"]
+            &["init", "zsh", "--cmd", "j;touch /tmp/zurf-test"]
         )
         .status
         .success()
@@ -205,7 +205,7 @@ fn rejects_shell_injection_in_configurable_names() {
     assert!(
         !run(
             t.path(),
-            &["init", "zsh", "--bind", "ctrl-g'$(touch /tmp/zort-test)"]
+            &["init", "zsh", "--bind", "ctrl-g'$(touch /tmp/zurf-test)"]
         )
         .status
         .success()

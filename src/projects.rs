@@ -108,7 +108,7 @@ pub fn load() -> Result<Vec<Project>> {
     let times = match timestamps(&data) {
         Ok(times) => times,
         Err(error) => {
-            eprintln!("zort: last-access metadata unavailable: {error}");
+            eprintln!("zurf: last-access metadata unavailable: {error}");
             HashMap::new()
         }
     };

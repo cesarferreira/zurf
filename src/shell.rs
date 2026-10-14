@@ -5,7 +5,7 @@ pub fn init(cmd: &str, bind: &str, limit: u16) -> Result<String> {
         !cmd.is_empty()
             && cmd.as_bytes()[0].is_ascii_alphabetic()
             && cmd.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_'),
-        "--cmd must be a shell identifier such as j"
+        "--cmd must be a shell identifier such as zs"
     );
     ensure!(
         ![
@@ -14,7 +14,7 @@ pub fn init(cmd: &str, bind: &str, limit: u16) -> Result<String> {
             "eval",
             "exec",
             "source",
-            "zort",
+            "zurf",
             "command",
             "local",
             "builtin",
@@ -55,30 +55,30 @@ pub fn init(cmd: &str, bind: &str, limit: u16) -> Result<String> {
         Some(format!("^{}", letter.to_ascii_uppercase()))
     };
     let mut script = format!(
-        r#"export ZORT_LIMIT={limit}
+        r#"export ZURF_LIMIT={limit}
 
 function {cmd}() {{
     local destination
-    destination="$(command zort pick "$@")" || return $?
+    destination="$(command zurf pick "$@")" || return $?
     [[ -n "$destination" ]] || return 1
     builtin cd -- "$destination"
 }}
 
-function _zort_widget() {{
+function _zurf_widget() {{
     local destination
     zle -I
-    if destination="$(command zort pick </dev/tty)" && [[ -n "$destination" ]]; then
+    if destination="$(command zurf pick </dev/tty)" && [[ -n "$destination" ]]; then
         builtin cd -- "$destination"
     fi
     zle reset-prompt
     zle -R
 }}
-zle -N _zort_widget
+zle -N _zurf_widget
 "#
     );
     if let Some(key) = key {
         script.push_str(&format!(
-            "bindkey -M emacs '{key}' _zort_widget\nbindkey -M viins '{key}' _zort_widget\n"
+            "bindkey -M emacs '{key}' _zurf_widget\nbindkey -M viins '{key}' _zurf_widget\n"
         ));
     }
     Ok(script)

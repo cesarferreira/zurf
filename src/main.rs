@@ -6,10 +6,14 @@ use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(version, about = "Switch projects with ranked search and Git context")]
+#[command(
+    name = "zurf",
+    version,
+    about = "Switch projects with ranked search and Git context"
+)]
 struct Cli {
     /// Maximum results shown in the picker
-    #[arg(long, global = true, env = "ZORT_LIMIT", default_value_t = 10, value_parser = clap::value_parser!(u16).range(1..))]
+    #[arg(long, global = true, env = "ZURF_LIMIT", default_value_t = 10, value_parser = clap::value_parser!(u16).range(1..))]
     limit: u16,
     #[command(subcommand)]
     command: Option<Commands>,
@@ -35,7 +39,7 @@ enum Commands {
     Init {
         #[arg(value_parser = ["zsh"])]
         shell: String,
-        #[arg(long, default_value = "j")]
+        #[arg(long, default_value = "zs")]
         cmd: String,
         /// Shortcut such as ctrl-g; use none to disable
         #[arg(long, default_value = "ctrl-g")]
