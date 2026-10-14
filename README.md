@@ -58,8 +58,8 @@ Press **Ctrl+G** or run `zs` to open the picker. Type to fuzzy-search, navigate 
 
 ```sh
 zs                  # Open the picker
-zs website            # Start with a search
-zs --query website    # Jump to the best match
+zs website          # Start with a search
+zs --query website  # Jump to the best match
 zs --limit 5        # Show up to five results
 ```
 
